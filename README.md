@@ -34,3 +34,18 @@ python3 -m cli search "Plant in Mexicali, Mexico"
 water-researcher test gpt
 water-researcher search "Plant in Mexicali, Mexico"
 ```
+
+## Providers
+
+Use the `--source` option to specify a provider:
+
+```bash
+water-researcher search "Plant in Mexicali, Mexico" --source gpt
+# This is also the default source, a bit slow but more reliable
+
+water-researcher search "Plant in Mexicali, Mexico" --source gemma
+# Get rate-limited very quickly
+
+water-researcher search "Plant in Mexicali, Mexico" --source groq
+# Quicker but contains many parsing errors, should build a more robust parser for this to work properly
+```
