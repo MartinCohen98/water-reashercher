@@ -109,7 +109,7 @@ def display_results(results):
                 console.print(f"  **Relevance:** {source.get('Relevance', 'N/A')}")
                 console.print(f"  **Validation:** {source.get('Validation', 'N/A')}")
         else:
-            console.print(f"**Snippet:** {result.snippet}")
+            console.print(f"**Snippet:** {result.raw_response}")
         console.print()
 
 

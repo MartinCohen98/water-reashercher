@@ -52,49 +52,63 @@ def parse_model_response(response: Union[str, Dict[str, Any]]) -> VerificationRe
         try:
             parsed = json.loads(response)
         except json.JSONDecodeError as exc:
-            return VerificationResult(valid=False, errors=[f"invalid JSON: {exc.msg}"], parsed={})
+            error_msg = f"invalid JSON: {exc.msg}"
+            print(f"[Parse Error] {error_msg}")
+            return VerificationResult(valid=False, errors=[error_msg], parsed={})
     elif isinstance(response, dict):
         parsed = response
     else:
-        return VerificationResult(valid=False, errors=["response must be a JSON string or dict"], parsed={})
+        error_msg = "response must be a JSON string or dict"
+        print(f"[Parse Error] {error_msg}")
+        return VerificationResult(valid=False, errors=[error_msg], parsed={})
 
     if not isinstance(parsed, dict):
-        return VerificationResult(valid=False, errors=["top-level JSON must be an object"], parsed={})
+        error_msg = "top-level JSON must be an object"
+        print(f"[Parse Error] {error_msg}")
+        return VerificationResult(valid=False, errors=[error_msg], parsed={})
 
     actual_keys = set(parsed.keys())
     if actual_keys != EXPECTED_KEYS:
         missing = EXPECTED_KEYS - actual_keys
         extra = actual_keys - EXPECTED_KEYS
         if missing:
-            errors.append(f"missing keys: {', '.join(sorted(missing))}")
+            error_msg = f"missing keys: {', '.join(sorted(missing))}"
+            errors.append(error_msg)
         if extra:
-            errors.append(f"unexpected keys: {', '.join(sorted(extra))}")
+            error_msg = f"unexpected keys: {', '.join(sorted(extra))}"
+            errors.append(error_msg)
 
     data_value = parsed.get("Data")
     if not isinstance(data_value, str):
-        errors.append("Data must be a string")
+        error_msg = "Data must be a string"
+        errors.append(error_msg)
 
     sources = parsed.get("Sources")
     if not isinstance(sources, list):
-        errors.append("Sources must be a list")
+        error_msg = "Sources must be a list"
+        errors.append(error_msg)
     else:
         if len(sources) == 0:
-            errors.append("Sources must include at least one entry")
+            error_msg = "Sources must include at least one entry"
+            errors.append(error_msg)
         for index, source_item in enumerate(sources, start=1):
             if not isinstance(source_item, dict):
-                errors.append(f"Sources[{index}] must be an object")
+                error_msg = f"Sources[{index}] must be an object"
+                errors.append(error_msg)
                 continue
             item_keys = set(source_item.keys())
             if item_keys != EXPECTED_SOURCE_KEYS:
                 missing = EXPECTED_SOURCE_KEYS - item_keys
                 extra = item_keys - EXPECTED_SOURCE_KEYS
                 if missing:
-                    errors.append(f"Sources[{index}] missing keys: {', '.join(sorted(missing))}")
+                    error_msg = f"Sources[{index}] missing keys: {', '.join(sorted(missing))}"
+                    errors.append(error_msg)
                 if extra:
-                    errors.append(f"Sources[{index}] unexpected keys: {', '.join(sorted(extra))}")
-            for field in EXPECTED_SOURCE_KEYS:
-                if field in source_item and not isinstance(source_item[field], str):
-                    errors.append(f"Sources[{index}].{field} must be a string")
+                    error_msg = f"Sources[{index}] unexpected keys: {', '.join(sorted(extra))}"
+                    errors.append(error_msg)
+
+    for error in errors:
+        print(f"[Parse Error] {error}")
 
     return VerificationResult(valid=not errors, errors=errors, parsed=parsed if not errors else {})
 
@@ -109,22 +123,28 @@ def verify_model_response(response: Union[str, Dict[str, Any]]) -> VerificationR
     validation_errors: List[str] = []
 
     for index, source_item in enumerate(sources, start=1):
-        source_item["Validation"] = False
         url = source_item.get("Source", "")
         excerpt = source_item.get("Excerpt", "")
 
         if not url or not excerpt:
-            validation_errors.append(f"Sources[{index}] missing URL or excerpt for validation")
+            error_msg = f"Missing URL or excerpt for validation"
+            validation_errors.append(f"Sources[{index}]" + error_msg)
+            source_item["Validation"] = error_msg
             continue
 
         try:
             page_text = _fetch_page_text(url)
             if _excerpt_found_in_page(excerpt, page_text):
-                source_item["Validation"] = True
+                success_msg = f"Excerpt verified at source {index}"
+                source_item["Validation"] = success_msg
             else:
-                validation_errors.append(f"Sources[{index}] excerpt not found at URL")
+                error_msg = f"Excerpt not found at URL"
+                validation_errors.append(f"Sources[{index}]" + error_msg)
+                source_item["Validation"] = error_msg
         except Exception as exc:
-            validation_errors.append(f"Sources[{index}] failed to fetch URL: {exc}")
+            error_msg = f"Failed to fetch URL, could not verify source"
+            validation_errors.append(f"Sources[{index}]" + error_msg)
+            source_item["Validation"] = error_msg
 
     return VerificationResult(
         valid=parsed_result.valid,

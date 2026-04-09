@@ -6,9 +6,8 @@ from typing import List
 @dataclass
 class SearchResult:
     title: str
-    url: str
-    snippet: str
     source: str
+    raw_response: dict
     parsed_response: dict = None
 
 
@@ -49,7 +48,7 @@ class SearchProvider(ABC):
         query = "test"
         try:
             results = self.search(query)
-            response = results[0].snippet if results else ""
+            response = results[0].raw_response if results else ""
             return TestResult(query=query, response=response, working=len(results) > 0)
         except:
             return TestResult(query=query, response="", working=False)
