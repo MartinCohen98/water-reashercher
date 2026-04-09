@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "water-researcher"
+version = "0.1.0"
+description = "CLI tool for searching water research data from various sources"
+authors = [
+    {name = "Martin Cohen", email = "martincohen98@gmail.com"},
+]
+dependencies = [
+    "typer>=0.12.0",
+    "rich>=13.7.0",
+    "googlesearch-python",
+    "ddgs",
+    "openai>=1.0.0",
+    "python-dotenv>=1.0.0",
+]
+requires-python = ">=3.8"
+
+[project.scripts]
+water-researcher = "cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
